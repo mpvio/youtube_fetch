@@ -55,7 +55,7 @@ async fn youtube_api_access(input : Vec<&str>){
             Err(err) => println!("{:#?}", err),
         }
     }
-    //write_videos_to_file(videos).await;
+
     write_channels_to_file(channels).await;
 }
 
