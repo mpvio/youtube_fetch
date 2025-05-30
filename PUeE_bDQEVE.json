@@ -1,23 +1,5 @@
 {
   "id": "PUeE_bDQEVE",
-  "statistics": [
-    {
-      "time": "2025-05-30T13:53:52Z",
-      "viewCount": "2015036",
-      "favoriteCount": "0",
-      "commentCount": "2221",
-      "likeCount": "131242",
-      "dislikeCount": "281"
-    },
-    {
-      "time": "2025-05-30T13:54:29Z",
-      "viewCount": "2015036",
-      "favoriteCount": "0",
-      "commentCount": "2221",
-      "likeCount": "131242",
-      "dislikeCount": "281"
-    }
-  ],
   "snippet": {
     "publishedAt": "2024-08-31T19:00:14Z",
     "title": "Batman Loses his Memory",
@@ -43,5 +25,51 @@
       "sketch"
     ]
   },
-  "changes": null
+  "statistics": [
+    {
+      "time": "2025-05-30T13:53:52Z",
+      "viewCount": "2015036",
+      "favoriteCount": "0",
+      "commentCount": "2221",
+      "likeCount": "131242",
+      "dislikeCount": "281"
+    },
+    {
+      "time": "2025-05-30T13:54:29Z",
+      "viewCount": "2015036",
+      "favoriteCount": "0",
+      "commentCount": "2221",
+      "likeCount": "131242",
+      "dislikeCount": "281"
+    },
+    {
+      "time": "2025-05-30T15:12:45Z",
+      "viewCount": "2015109",
+      "favoriteCount": "0",
+      "commentCount": "2221",
+      "likeCount": "131244",
+      "dislikeCount": "281"
+    },
+    {
+      "time": "2025-05-30T15:14:32Z",
+      "viewCount": "2015109",
+      "favoriteCount": "0",
+      "commentCount": "2221",
+      "likeCount": "131244",
+      "dislikeCount": "281"
+    }
+  ],
+  "changes": [
+    {
+      "time": "2025-05-30T15:12:45Z",
+      "published_at": null,
+      "title": {
+        "old": "",
+        "new": "Batman Loses his Memory"
+      },
+      "description": null,
+      "channel_title": null,
+      "tags": null
+    }
+  ]
 }

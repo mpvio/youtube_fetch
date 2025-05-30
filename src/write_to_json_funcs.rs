@@ -10,7 +10,8 @@ use crate::{
 
 pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io::Error> {
     let id: &String = &video.id;
-    let time: &String = &Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let title: &String = &video.snippet.title;
+    //let time: &String = &Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
     let mut file = File::options().read(true).write(true).create(true).open(format!("{id}.json"))?;
     
@@ -25,10 +26,16 @@ pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io:
         serde_json::from_reader(BufReader::new(&file))?
     };
     
-    if let Some(current_stats) = video.statistics.first() {
-        println!("{id}:\n{:#?}", &current_stats);
+    let time = if let Some(current_stats) = video.statistics.first() {
+        // output result
+        println!("{id} {title}:\n{:#?}", &current_stats);
+        // push current stats to existing vec
         old_data.statistics.push(current_stats.clone());
-    }
+        // return time data was taken, else assign current time
+        &current_stats.time
+    } else {
+        &Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+    };
 
     let current_snippet = &video.snippet;
     let old_snippet = &old_data.snippet;

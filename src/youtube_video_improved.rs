@@ -7,8 +7,8 @@ use crate::youtube_video::Snippet;
 #[serde(rename_all = "camelCase")]
 pub struct YtVideo{
     pub id: String,
-    pub statistics: Vec<FullStatistics>,
     pub snippet: Snippet,
+    pub statistics: Vec<FullStatistics>,
     pub changes: Option<Vec<Changes>>
 }
 

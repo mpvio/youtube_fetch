@@ -1,9 +1,8 @@
 use std::io::{self};
 
-use write_to_json_funcs::{write_better_video, write_channels_to_file, write_videos_to_file};
+use write_to_json_funcs::{write_better_video, write_channels_to_file};
 use youtube_channel::ChannelRootComplete;
 use youtube_get_funcs::{youtube_get_channels, youtube_get_videos};
-use youtube_video::VideoRootComplete;
 use youtube_video_improved::YtVideo;
 
 pub mod youtube_video;
