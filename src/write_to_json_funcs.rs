@@ -4,16 +4,14 @@ use chrono::Local;
 
 use crate::{
     youtube_channel::ChannelRootComplete, 
-    youtube_video::{Snippet, VideoRootComplete}, 
+    youtube_video::Snippet, 
     youtube_video_improved::{Changes, StringDiff, TagsDiff, YtVideo}
 };
 
 pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io::Error> {
     let id: &String = &video.id;
     let title: &String = &video.snippet.title;
-    //let time: &String = &Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-
-    let mut file = File::options().read(true).write(true).create(true).open(format!("{id}.json"))?;
+    let mut file = File::options().read(true).write(true).create(true).open(format!("{title} {id}.json"))?;
     
     let mut old_data: YtVideo = if file.metadata()?.len() == 0 {
         YtVideo {
@@ -39,6 +37,7 @@ pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io:
 
     let current_snippet = &video.snippet;
     let old_snippet = &old_data.snippet;
+    // check if title/ tags/ desc/ etc. changed
     let no_changes = current_snippet == old_snippet;
     if !no_changes {
         let changes = compare_snippets(current_snippet, old_snippet, time);
@@ -55,6 +54,7 @@ pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io:
         }
     }
 
+    //overwrite file with updated json/ struct
     let _ = file.seek(SeekFrom::Start(0));
     let _ = file.set_len(0);
     let _ = serde_json::to_writer_pretty(file, &old_data)?;
@@ -106,38 +106,6 @@ fn compare_snippets(new_snippet: &Snippet, old_snippet: &Snippet, time: &String)
     }
 
     changes
-}
-
-pub async fn write_videos_to_file(video_obj : VideoRootComplete){
-    for video in video_obj.items {
-        let title = video.snippet.title.clone() + " " + &video.id;
-        let file_name = format!("{}.json", title);
-
-        if let Ok(mut file) = File::options()
-        .read(true)
-        .write(true)
-        .open(&file_name){
-            let reader = BufReader::new(&file);
-            let x: Result<VideoRootComplete, serde_json::Error> = serde_json::from_reader(reader);
-            match x {
-                Ok(mut video_data) => {
-                    video_data.items.push(video.clone());
-                    let _ = file.seek(SeekFrom::Start(0));
-                    let _ = serde_json::to_writer_pretty(file, &video_data);
-                    println!("{title} updated.");
-                },
-                Err(_) => println!("not a video"),
-            }
-        } else {
-            if let Ok(file) = std::fs::File::create(&file_name){
-                let new_json = VideoRootComplete {
-                    items: [video].to_vec()
-                };
-                let _ = serde_json::to_writer_pretty(file, &new_json);
-                println!("{title} written.");
-            }
-        }
-    };
 }
 
 pub async fn write_channels_to_file(channel_obj : ChannelRootComplete){

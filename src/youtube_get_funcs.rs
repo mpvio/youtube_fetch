@@ -2,7 +2,7 @@ use std::fs;
 
 use chrono::Local;
 
-use crate::{ryd_struct, youtube_channel::{self, ChannelRootComplete}, youtube_video::{self, ItemComplete, StatisticsComplete, VideoRootComplete}, youtube_video_improved::{FullStatistics, YtVideo}};
+use crate::{ryd_struct, youtube_channel::{self, ChannelRootComplete}, youtube_video::{self}, youtube_video_improved::{FullStatistics, YtVideo}};
 
 pub async fn youtube_get_channels(ids : Vec<&str>, fields : &str, url: &str) -> ChannelRootComplete {
     let api_key_string = get_api_key();
@@ -53,9 +53,6 @@ pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Ve
         ("id", &ids.join(",")),
         ("fields", fields)
     ];
-    // let mut yt_complete_obj = VideoRootComplete {
-    //     items: vec![]
-    // };
 
     let mut complete_items: Vec<YtVideo> = vec![];
     if let Ok(get_url) = reqwest::Url::parse_with_params(url, params) {
@@ -65,12 +62,9 @@ pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Ve
                 let yt = res.json::<youtube_video::VideoRoot>().await;
                 if let Ok(result) = yt {
                     for item in result.items {
-                        let result = upgrade_video(transform_result(item).await);
+                        let result = transform_result(item).await;
                         complete_items.push(result);
                     }
-                    // yt_complete_obj = VideoRootComplete {
-                    //     items: complete_items
-                    // };
                 }
             }
         }
@@ -78,62 +72,31 @@ pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Ve
     complete_items
 }
 
-fn upgrade_video(item: ItemComplete) -> YtVideo {
-    let id: String = item.id;
-    let snippet: youtube_video::Snippet = item.snippet;
-    let statistics: StatisticsComplete = item.statistics;
-    let time: String = item.time;
-
-    let full_stats : FullStatistics = FullStatistics { 
-        time: time,
-        view_count: statistics.view_count,
-        favorite_count: statistics.favorite_count,
-        comment_count: statistics.comment_count,
-        like_count: statistics.like_count,
-        dislike_count: statistics.dislike_count
-    };
-
-    let mut vec_stats = Vec::<FullStatistics>::new();
-    vec_stats.push(full_stats);
-
-    let yt_video : YtVideo = YtVideo { 
-        id, 
-        statistics: vec_stats, 
-        snippet, 
-        changes: None 
-    };
-
-    yt_video
-
-}
-
-async fn transform_result(old_result : youtube_video::Item) -> youtube_video::ItemComplete {
+async fn transform_result(old_result : youtube_video::Item) -> YtVideo {
     let time: String = Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
     let dislikes = single_ryd(&old_result.id).await;
 
     //println!("{old_result:#?}");
-
-    let new_statistics : StatisticsComplete  = youtube_video::StatisticsComplete {
-        view_count: old_result.statistics.view_count,
-        favorite_count: old_result.statistics.favorite_count,
-        comment_count: old_result.statistics.comment_count,
-        like_count: old_result.statistics.like_count,
-        dislike_count: dislikes,
+    let full_stats : FullStatistics = FullStatistics { 
+        time, 
+        view_count: old_result.statistics.view_count, 
+        favorite_count: old_result.statistics.favorite_count, 
+        comment_count: old_result.statistics.comment_count, 
+        like_count: old_result.statistics.like_count, 
+        dislike_count: dislikes 
     };
 
     let id: String = old_result.id;
     let snippet: youtube_video::Snippet = old_result.snippet;
+    let mut statistics : Vec<FullStatistics> = Vec::new();
+    statistics.push(full_stats);
 
-    let new_item : youtube_video::ItemComplete = youtube_video::ItemComplete {
-        id,
-        snippet,
-        statistics: new_statistics,
-        time,
+    return YtVideo { 
+        id, 
+        snippet, 
+        statistics, 
+        changes: None 
     };
-
-    //println!("{new_item:#?}");
-
-    new_item
 
 }
 
@@ -150,7 +113,7 @@ async fn single_ryd(video_id : &String) -> String {
 }
 
 fn get_api_key() -> String {
-    let file_name = "api_key.txt";
+    let file_name = "target/api_key.txt";
 
     let contents = fs::read_to_string(file_name)
         .expect("No key found");

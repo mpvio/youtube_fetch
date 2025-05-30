@@ -23,18 +23,6 @@ pub struct FullStatistics {
     pub dislike_count: String,
 }
 
-/*
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Snippet {
-    pub published_at: String,
-    pub title: String,
-    pub description: String,
-    pub channel_title: String,
-    pub tags: Vec<String>,
-}
-*/
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Changes {
     pub time: String,
