@@ -1,15 +1,17 @@
 use std::io::{self};
 
-use write_to_json_funcs::{write_channels_to_file, write_videos_to_file};
+use write_to_json_funcs::{write_better_video, write_channels_to_file, write_videos_to_file};
 use youtube_channel::ChannelRootComplete;
 use youtube_get_funcs::{youtube_get_channels, youtube_get_videos};
 use youtube_video::VideoRootComplete;
+use youtube_video_improved::YtVideo;
 
 pub mod youtube_video;
 pub mod ryd_struct;
 pub mod youtube_channel;
 pub mod youtube_get_funcs;
 pub mod write_to_json_funcs;
+pub mod youtube_video_improved;
 
 #[tokio::main]
 async fn main() {
@@ -37,7 +39,7 @@ fn get_ids_from_user() -> String {
 async fn youtube_api_access(input : Vec<&str>){
     let (vids, chans) = parse_ids(input);
 
-    let videos: VideoRootComplete = youtube_get_videos(
+    let videos: Vec<YtVideo> = youtube_get_videos(
         vids, 
         "items(id, snippet(title,publishedAt,description,tags,channelTitle),statistics)", 
         "https://www.googleapis.com/youtube/v3/videos").await;
@@ -47,8 +49,15 @@ async fn youtube_api_access(input : Vec<&str>){
         "items(id, snippet(title, description, publishedAt, localized), statistics)",
         "https://www.googleapis.com/youtube/v3/channels").await;
 
-    write_videos_to_file(videos);
-    write_channels_to_file(channels);
+    for video in videos {
+        let outcome = write_better_video(video).await;
+        match outcome {
+            Ok(msg) => println!("{}", msg),
+            Err(err) => println!("{:#?}", err),
+        }
+    }
+    //write_videos_to_file(videos).await;
+    write_channels_to_file(channels).await;
 }
 
 fn parse_ids(ids: Vec<&str>) -> (Vec<&str>, Vec<&str>){
