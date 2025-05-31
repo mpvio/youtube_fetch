@@ -1,4 +1,5 @@
 use std::io::{self};
+use std::env;
 
 use write_to_json_funcs::{write_better_video, write_channels_to_file};
 use youtube_channel::ChannelRootComplete;
@@ -14,9 +15,16 @@ pub mod youtube_video_improved;
 
 #[tokio::main]
 async fn main() {
-    let inputs: String = get_ids_from_user();
-    let ids : Vec<&str> = inputs.split_ascii_whitespace().collect();
-    if ids.len() != 0 {
+    let args: Vec<String> = env::args().collect();
+    
+    let ids: Vec<String> = if args.len() > 1 {
+        args.into_iter().skip(1).collect()  // Skip the first arg (program name)
+    } else {
+        let inputs = get_ids_from_user();
+        inputs.split_ascii_whitespace().map(|s| s.to_owned()).collect()
+    };
+    
+    if !ids.is_empty() {
         youtube_api_access(ids).await;
     }
 }
@@ -35,8 +43,9 @@ fn get_ids_from_user() -> String {
     }
 }
 
-async fn youtube_api_access(input : Vec<&str>){
-    let (vids, chans) = parse_ids(input);
+async fn youtube_api_access(input : Vec<String>){
+    let str_input : Vec<&str> = input.iter().map(|s| &**s).collect();
+    let (vids, chans) = parse_ids(str_input);
 
     let videos: Vec<YtVideo> = youtube_get_videos(
         vids, 
