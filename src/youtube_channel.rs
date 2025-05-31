@@ -40,20 +40,3 @@ pub struct Statistics {
     pub hidden_subscriber_count: bool,
     pub video_count: String,
 }
-
-//complete version
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ChannelRootComplete {
-    pub items: Vec<ItemComplete>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ItemComplete {
-    pub id: String,
-    pub snippet: Snippet,
-    pub statistics: Statistics,
-    #[serde(rename = "TIME")]
-    pub time: String,
-}

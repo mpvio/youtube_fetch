@@ -2,9 +2,9 @@ use std::fs;
 
 use chrono::Local;
 
-use crate::{ryd_struct, youtube_channel::{self, ChannelRootComplete}, youtube_video::{self}, youtube_video_improved::{FullStatistics, YtVideo}};
+use crate::{ryd_struct, youtube_channel::{self}, youtube_video::{self}, youtube_video_improved::{FullStatistics, YtVideo}, yt_channel_improved::{FullStatistics as ChnStats, YtChannel}};
 
-pub async fn youtube_get_channels(ids : Vec<&str>, fields : &str, url: &str) -> ChannelRootComplete {
+pub async fn youtube_get_channels(ids : Vec<&str>, fields : &str, url: &str) -> Vec<YtChannel> {
     let api_key_string = get_api_key();
     let api_key = api_key_string.as_str();
     let params = [
@@ -14,34 +14,44 @@ pub async fn youtube_get_channels(ids : Vec<&str>, fields : &str, url: &str) -> 
         ("fields", fields)
     ];
 
-    let mut yt_complete_obj = ChannelRootComplete {
-        items: vec![]
-    };
+    let mut yt_complete_obj : Vec<YtChannel> = vec![];
 
     if let Ok(get_url) = reqwest::Url::parse_with_params(url, params){
         if let Ok(response) = reqwest::get(get_url).await {
             if response.status() == reqwest::StatusCode::OK {
                 if let Ok(result) = response.json::<youtube_channel::ChannelRoot>().await {
-                    let mut complete_items: Vec<youtube_channel::ItemComplete> = vec![];
-                    let time: String = Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-
+                    //start changes here
                     for item in result.items {
-                        complete_items.push(youtube_channel::ItemComplete {
-                            id: item.id,
-                            snippet: item.snippet,
-                            statistics: item.statistics,
-                            time: time.clone()
-                        });
+                        let yt_channel = convert_channel(item);
+                        yt_complete_obj.push(yt_channel);
                     }
-
-                    yt_complete_obj = ChannelRootComplete {
-                        items: complete_items
-                    };
                 }
             }
         }
     }
     yt_complete_obj
+}
+
+fn convert_channel(channel : youtube_channel::Item) -> YtChannel {
+    let time: String = Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+
+    let full_stats : ChnStats = ChnStats {
+        time,
+        video_count: channel.statistics.video_count,
+        view_count: channel.statistics.view_count,
+        subscriber_count: channel.statistics.subscriber_count,
+        hidden_subscriber_count: channel.statistics.hidden_subscriber_count
+    };
+
+    let mut statistics : Vec<ChnStats> = vec![];
+    statistics.push(full_stats);
+
+    return YtChannel {
+        id: channel.id,
+        snippet: channel.snippet,
+        statistics: statistics,
+        changes: None
+    };
 }
 
 pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Vec<YtVideo> {
