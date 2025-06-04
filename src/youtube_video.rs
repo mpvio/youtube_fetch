@@ -23,7 +23,7 @@ pub struct Snippet {
     pub title: String,
     pub description: String,
     pub channel_title: String,
-    pub tags: Vec<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -65,11 +65,37 @@ pub async fn write_better_channel(channel: YtChannel) -> Result<&'static str, st
     Ok("Channel Successful.")
 }
 
+fn convert_forbidden_ascii(title: String) -> String {
+    /*
+    < (less than)
+    > (greater than)
+    : (colon - sometimes works, but is actually NTFS Alternate Data Streams)
+    " (double quote)
+    / (forward slash)
+    \ (backslash)
+    | (vertical bar or pipe)
+    ? (question mark)
+    * (asterisk)
+     */
+    title.chars().map(|c| match c {
+        '<' => '(',
+        '>' => ')',
+        ':' => ';',
+        '"' => '\'',
+        '\\' => '[',
+        '/' => ']',
+        '|' => '_',
+        '?' => '!',
+        '*' => '^',
+        _ => c
+    }).collect()
+}
+
 pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io::Error> {
     let id: &String = &video.id;
     let title: &String = &video.snippet.title;
-    let title_abridged: String = title.chars().take(10).collect();
-    let mut file = File::options().read(true).write(true).create(true).open(format!("{title_abridged} {id}.json"))?;
+    let title_abridged: String = convert_forbidden_ascii(title.chars().take(10).collect());
+    let mut file = File::options().read(true).write(true).create(true).open(format!("{} {id}.json", &title_abridged))?;
     
     let mut old_data: YtVideo = if file.metadata()?.len() == 0 {
         YtVideo {

@@ -17,14 +17,17 @@ pub mod yt_channel_improved;
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
+    //println!("args: {:#?}", &args);
     
     let ids: Vec<String> = if args.len() > 1 {
         args.into_iter().skip(1).collect()  // Skip the first arg (program name)
     } else {
         let inputs = get_ids_from_user();
+        //println!("inputs: {:#?}", &inputs);
         inputs.split_ascii_whitespace().map(|s| s.to_owned()).collect()
     };
     
+    //println!("ids: {:#?}", &ids);
     if !ids.is_empty() {
         youtube_api_access(ids).await;
     }
@@ -36,7 +39,7 @@ fn get_ids_from_user() -> String {
     let stdin: io::Stdin = io::stdin();
     match stdin.read_line(&mut buffer) {
         Ok(_) => {
-            buffer
+            buffer.trim().to_string()
         },
         Err(_) => {
             String::new()
@@ -81,11 +84,15 @@ fn parse_ids(ids: Vec<&str>) -> (Vec<&str>, Vec<&str>){
     let mut others : Vec<&str> = vec![];
 
     for id in ids {
+        println!("currently: {:#?}", &id);
         if id.len() == 11 {
+            println!("video: {:#?}", &id);
             videos.push(id);
         } else if id.len() == 24 {
+            println!("channel: {:#?}", &id);
             channels.push(id);
         } else {
+            println!("other: {:#?}", &id);
             others.push(id);
         }
     }

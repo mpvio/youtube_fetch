@@ -41,6 +41,6 @@ pub struct StringDiff {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TagsDiff {
-    pub old: Vec<String>,
-    pub new: Vec<String>
+    pub old: Option<Vec<String>>,
+    pub new: Option<Vec<String>>
 }

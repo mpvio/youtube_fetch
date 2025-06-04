@@ -66,17 +66,31 @@ pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Ve
 
     let mut complete_items: Vec<YtVideo> = vec![];
     if let Ok(get_url) = reqwest::Url::parse_with_params(url, params) {
+        //println!("get_url: {:#?}", &get_url);
         let response = reqwest::get(get_url).await;
-        if let Ok(res) = response { 
+        match response {
+            Ok(res) => {
             if res.status() == reqwest::StatusCode::OK {
                 let yt = res.json::<youtube_video::VideoRoot>().await;
-                if let Ok(result) = yt {
-                    for item in result.items {
-                        let result = transform_result(item).await;
-                        complete_items.push(result);
-                    }
+                match yt {
+                    Ok(result) => {
+                        //println!("result: {:#?}", &result);
+                        for item in result.items {
+                            let result = transform_result(item).await;
+                            complete_items.push(result);
+                        }
+                    },
+                    Err(err) => {
+                        println!("{:#?}", err);
+                    },
                 }
+            } else {
+                println!("{:#?}", res.status());
             }
+        },
+            Err(e) => {
+                println!("{:#?}", e);
+            },
         }
     };
     complete_items
