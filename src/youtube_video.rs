@@ -23,7 +23,7 @@ pub struct Snippet {
     pub title: String,
     pub description: String,
     pub channel_title: String,
-    pub tags: Vec<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,31 +33,4 @@ pub struct Statistics {
     pub like_count: String,
     pub favorite_count: String,
     pub comment_count: String,
-}
-
-//complete version
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VideoRootComplete {
-    pub items: Vec<ItemComplete>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ItemComplete {
-    pub id: String,
-    pub snippet: Snippet,
-    pub statistics: StatisticsComplete,
-    #[serde(rename = "TIME")]
-    pub time: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StatisticsComplete {
-    pub view_count: String,
-    pub favorite_count: String,
-    pub comment_count: String,
-    pub like_count: String,
-    pub dislike_count: String,
 }
