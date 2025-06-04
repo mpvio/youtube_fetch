@@ -1,10 +1,10 @@
 use std::io::{self};
 use std::env;
 
-use write_to_json_funcs::{write_better_channel, write_better_video};
 use youtube_get_funcs::{youtube_get_channels, youtube_get_videos};
-use youtube_video_improved::YtVideo;
-use yt_channel_improved::YtChannel;
+
+use crate::write_to_json_funcs::write_better_generic;
+use crate::yt_traits::{YtItem};
 
 pub mod youtube_video;
 pub mod ryd_struct;
@@ -13,6 +13,7 @@ pub mod youtube_get_funcs;
 pub mod write_to_json_funcs;
 pub mod youtube_video_improved;
 pub mod yt_channel_improved;
+pub mod yt_traits;
 
 #[tokio::main]
 async fn main() {
@@ -51,28 +52,30 @@ async fn youtube_api_access(input : Vec<String>){
     let str_input : Vec<&str> = input.iter().map(|s| &**s).collect();
     let (vids, chans) = parse_ids(str_input);
 
-    let videos: Vec<YtVideo> = youtube_get_videos(
+    let mut items: Vec<YtItem> = Vec::new();
+
+    for video in youtube_get_videos(
         vids, 
         "items(id, snippet(title,publishedAt,description,tags,channelTitle),statistics)", 
-        "https://www.googleapis.com/youtube/v3/videos").await;
+        "https://www.googleapis.com/youtube/v3/videos").await {
+            items.push(YtItem::Vi(video));
+        }
 
-    let channels: Vec<YtChannel> = youtube_get_channels(
+    for channel in youtube_get_channels(
         chans,
         "items(id, snippet(title, description, publishedAt, localized), statistics)",
-        "https://www.googleapis.com/youtube/v3/channels").await;
-
-    for video in videos {
-        let outcome = write_better_video(video).await;
-        match outcome {
-            Ok(msg) => println!("{}", msg),
-            Err(err) => println!("{:#?}", err),
+        "https://www.googleapis.com/youtube/v3/channels").await {
+            items.push(YtItem::Ch(channel));
         }
-    }
+    
+    for item in items {
+        let outcome = match item {
+            YtItem::Vi(yt_video) => write_better_generic(yt_video).await,
+            YtItem::Ch(yt_channel) => write_better_generic(yt_channel).await,
+        };
 
-    for channel in channels {
-        let outcome = write_better_channel(channel).await;
         match outcome {
-            Ok(msg) => println!("{}", msg),
+            Ok(_) => {}, //println!("{}", msg)
             Err(err) => println!("{:#?}", err),
         }
     }
@@ -84,15 +87,15 @@ fn parse_ids(ids: Vec<&str>) -> (Vec<&str>, Vec<&str>){
     let mut others : Vec<&str> = vec![];
 
     for id in ids {
-        println!("currently: {:#?}", &id);
+        //println!("currently: {:#?}", &id);
         if id.len() == 11 {
-            println!("video: {:#?}", &id);
+            //println!("video: {:#?}", &id);
             videos.push(id);
         } else if id.len() == 24 {
-            println!("channel: {:#?}", &id);
+            //println!("channel: {:#?}", &id);
             channels.push(id);
         } else {
-            println!("other: {:#?}", &id);
+            //println!("other: {:#?}", &id);
             others.push(id);
         }
     }
