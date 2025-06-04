@@ -9,10 +9,10 @@ use crate::{
     yt_channel_improved::{Changes as ChnChanges, LocalizedDiff, YtChannel}
 };
 
-pub async fn write_better_channel(channel: YtChannel) -> Result<&'static str, std::io::Error> {
+pub async fn write_better_channel(channel: YtChannel) -> Result<String, std::io::Error> {
     let id: &String = &channel.id;
     let title: &String = &channel.snippet.title;
-    let title_abridged: &String = &title.chars().take(10).collect();
+    let title_abridged: &String = &convert_forbidden_ascii(title.clone());
     let mut file = File::options().read(true).write(true).create(true).open(format!("{title_abridged} {id}.json"))?;
 
     let mut old: YtChannel = if file.metadata()?.len() == 0 {
@@ -62,21 +62,10 @@ pub async fn write_better_channel(channel: YtChannel) -> Result<&'static str, st
     let _ = file.set_len(0);
     let _ = serde_json::to_writer_pretty(file, &old)?;
 
-    Ok("Channel Successful.")
+    Ok(format!("{} Successful.", title_abridged))
 }
 
 fn convert_forbidden_ascii(title: String) -> String {
-    /*
-    < (less than)
-    > (greater than)
-    : (colon - sometimes works, but is actually NTFS Alternate Data Streams)
-    " (double quote)
-    / (forward slash)
-    \ (backslash)
-    | (vertical bar or pipe)
-    ? (question mark)
-    * (asterisk)
-     */
     title.chars().map(|c| match c {
         '<' => '(',
         '>' => ')',
@@ -91,11 +80,11 @@ fn convert_forbidden_ascii(title: String) -> String {
     }).collect()
 }
 
-pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io::Error> {
+pub async fn write_better_video(video: YtVideo) -> Result<String, std::io::Error> {
     let id: &String = &video.id;
     let title: &String = &video.snippet.title;
-    let title_abridged: String = convert_forbidden_ascii(title.chars().take(10).collect());
-    let mut file = File::options().read(true).write(true).create(true).open(format!("{} {id}.json", &title_abridged))?;
+    let title_abridged: &String = &convert_forbidden_ascii(title.clone());
+    let mut file = File::options().read(true).write(true).create(true).open(format!("{title_abridged} {id}.json"))?;
     
     let mut old_data: YtVideo = if file.metadata()?.len() == 0 {
         YtVideo {
@@ -143,7 +132,7 @@ pub async fn write_better_video(video: YtVideo) -> Result<&'static str, std::io:
     let _ = file.set_len(0);
     let _ = serde_json::to_writer_pretty(file, &old_data)?;
 
-    Ok("Video Successful.")
+    Ok(format!("{} Successful.", title_abridged))
 }
 
 fn compare_snippets_channel(new_snippet: &ChnSnippet, old_snippet: &ChnSnippet, time: &String) -> ChnChanges {
