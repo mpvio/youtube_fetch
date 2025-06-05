@@ -31,11 +31,25 @@ pub struct PageInfo {
 }
 
 /*
+playlist's own info:
+GET 
+https://youtube.googleapis.com/youtube/v3/playlists?
+part=status&part=contentDetails&part=snippet
+&id=PLtJifsYDxDHEwRfRS_WoaAKueZkWMsr4G
+&id=PLtJifsYDxDHHpVFsh8jxBz8ISZBsw37Ra
+&id=PL3N_0dV_yL3ZoA08G-CzbR-tWMV-I8xQn
+&maxResults=50
+&key=[YOUR_API_KEY] 
+HTTP/1.1
+
+*/
+
+/*
 https://www.googleapis.com/youtube/v3/playlistItems?
 part=contentDetails
 &maxResults=50
 &pageToken=EAAaHlBUOkNESWlFREV6T0RBek1FUkdORGcyTVRNMVFUaw
 &playlistId=PL3N_0dV_yL3ZoA08G-CzbR-tWMV-I8xQn
-&key=AIzaSyACKPcWPpqthbVfqc7UdoabN20hJRk6IHo
+&key=[YOUR_API_KEY]
 &pageToken=EAAaHlBUOkNCNGlFREU1TVRORE9FRkROVGN3TTBNMk56TQ
 */
