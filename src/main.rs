@@ -4,7 +4,7 @@ use std::env;
 use youtube_get_funcs::{youtube_get_channels, youtube_get_videos};
 
 use crate::write_to_json_funcs::write_better_generic;
-use crate::youtube_get_funcs::yt_get_playlist;
+use crate::youtube_get_funcs::{yt_get_playlist, yt_get_playlist_info};
 use crate::yt_traits::{YtItem};
 
 pub mod youtube_video;
@@ -16,6 +16,8 @@ pub mod youtube_video_improved;
 pub mod yt_channel_improved;
 pub mod yt_traits;
 pub mod youtube_playlist;
+pub mod yt_playlist_info;
+pub mod yt_playlist_improved;
 
 #[tokio::main]
 async fn main() {
@@ -57,18 +59,27 @@ async fn youtube_api_access(input : Vec<String>){
     let mut items: Vec<YtItem> = Vec::new();
 
     // handle playlist first:
+    match yt_get_playlist_info(&playlists).await {
+        Ok(playlist_data) => {
+            for pld in playlist_data {
+                items.push(YtItem::Pl(pld));
+            }
+        },
+        Err(e) => {
+            println!("{e:#?}");
+        },
+    };
+
+    // for each playlist, add videos to vids vec:
     let mut vid_strings: Vec<String> = Vec::new();
     for playlist in playlists {
         match yt_get_playlist(playlist).await {
-            Ok((count, pl_vids)) => {
-                println!("Playlist Size: {count}.");
+            Ok((_, pl_vids)) => {
                 vid_strings.extend(pl_vids);
             },
             Err(e) => println!("{playlist}: {e:#?}"),
         }
     }
-
-    // add playlist videos to vec of vids to search
     let vids_refs: Vec<&str> = vid_strings.iter().map(|s| s.as_str()).collect();
     vids.extend(vids_refs);
 
@@ -91,6 +102,7 @@ async fn youtube_api_access(input : Vec<String>){
         let outcome = match item {
             YtItem::Vi(yt_video) => write_better_generic(yt_video).await,
             YtItem::Ch(yt_channel) => write_better_generic(yt_channel).await,
+            YtItem::Pl(yt_playlist) => write_better_generic(yt_playlist).await,
         };
 
         match outcome {

@@ -3,13 +3,55 @@ use std::fs;
 use chrono::Local;
 
 use crate::{
-    ryd_struct, 
-    youtube_channel::{self}, 
-    youtube_playlist::PlaylistRoot, 
-    youtube_video::{self}, 
-    youtube_video_improved::{FullStatistics, YtVideo}, 
-    yt_channel_improved::{FullStatistics as ChnStats, YtChannel}
+    ryd_struct, youtube_channel::{self}, youtube_playlist::PlaylistRoot, youtube_video::{self}, youtube_video_improved::{FullStatistics, YtVideo}, yt_channel_improved::{FullStatistics as ChnStats, YtChannel}, yt_playlist_improved::{FullPlSnippet, PlChanges, PlStats, YtPlaylist}, yt_playlist_info::{PlItem, PlaylistInfo}
 };
+
+pub async fn yt_get_playlist_info(ids: &Vec<&str>) -> Result<Vec<YtPlaylist>, reqwest::Error> {
+    let api_key_string = get_api_key();
+    let client = reqwest::Client::new();  
+
+    let request = client.get(
+        "https://youtube.googleapis.com/youtube/v3/playlists")
+        .query(&[("key", &api_key_string)])
+        .query(&[("id", &ids.join(","))])
+        .query(&[("part", "status,contentDetails,snippet")])
+        .query(&[("maxResults", "50")]);
+
+    let response = request.send().await?;
+    let result: PlaylistInfo = response.json().await?;
+
+    let mut playlists: Vec<YtPlaylist> = vec![];
+    for item in result.items {
+        playlists.push(convert_playlist(item));
+    }
+
+    Ok(playlists)
+}
+
+fn convert_playlist(item: PlItem) -> YtPlaylist {
+    let time: String = Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    
+    let new_snippet: FullPlSnippet = FullPlSnippet {
+        published_at: item.snippet.published_at,
+        channel_id: item.snippet.channel_id,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        channel_title: item.snippet.channel_title,
+        privacy_status: item.status.privacy_status
+    };
+
+    let changes: Option<Vec<PlChanges>> = None;
+    let mut statistics : Vec<PlStats> = vec![];
+    statistics.push(PlStats { time: time, item_count: item.content_details.item_count });
+
+    YtPlaylist {
+        id: item.id,
+        statistics,
+        snippet: new_snippet,
+        changes
+    }
+    
+}
 
 pub async fn yt_get_playlist(id: &str) -> Result<(i64, Vec<String>), reqwest::Error> {
     let api_key_string = get_api_key();

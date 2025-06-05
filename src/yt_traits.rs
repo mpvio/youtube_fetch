@@ -10,12 +10,16 @@ use crate::{
         TagsDiff, 
         YtVideo}, 
     yt_channel_improved::{
-        Changes as ChnChanges, FullStatistics as ChnStats, LocalizedDiff, YtChannel}
+        Changes as ChnChanges, 
+        FullStatistics as ChnStats, 
+        LocalizedDiff, 
+        YtChannel}, yt_playlist_improved::{FullPlSnippet, PlChanges, PlStats, YtPlaylist}
 };
 
 pub enum YtItem {
     Vi(YtVideo),
-    Ch(YtChannel)
+    Ch(YtChannel),
+    Pl(YtPlaylist)
 }
 
 pub enum YtSnippet {
@@ -38,6 +42,30 @@ pub trait YtItemWithSnippet {
     fn changes_mut(&mut self) -> &mut Option<Vec<Self::ChangesType>>;
     fn new_empty(id: String, snippet: &Self::SnippetType) -> Self;
     fn get_time(stats: &Self::StatsType) -> &String;
+}
+
+impl YtItemWithSnippet for YtPlaylist {
+    type SnippetType = FullPlSnippet;
+    type ChangesType = PlChanges;
+    type StatsType = PlStats;
+
+    fn id(&self) -> &String { &self.id }
+    fn title(&self) -> &String { &self.snippet.title }
+    fn snippet(&self) -> &FullPlSnippet { &self.snippet }
+    fn take_snippet(self) -> FullPlSnippet { self.snippet }
+    fn snippet_mut(&mut self) -> &mut FullPlSnippet { &mut self.snippet }
+    fn statistics(&self) -> &Vec<PlStats> { &self.statistics }
+    fn statistics_mut(&mut self) -> &mut Vec<PlStats> { &mut self.statistics }
+    fn changes_mut(&mut self) -> &mut Option<Vec<PlChanges>> { &mut self.changes }
+    fn new_empty(id: String, snippet: &Self::SnippetType) -> Self {
+        YtPlaylist { 
+            id, 
+            snippet: snippet.clone(), 
+            statistics: Vec::new(),
+            changes: None 
+        }
+    }
+    fn get_time(stats: &Self::StatsType) -> &String { &stats.time }
 }
 
 impl YtItemWithSnippet for YtVideo {
@@ -92,6 +120,57 @@ pub trait SnippetComparable {
     type ChangesType;
     
     fn compare(&self, old: &Self, time: &String) -> Self::ChangesType;
+}
+
+impl SnippetComparable for FullPlSnippet {
+    type ChangesType = PlChanges;
+    
+    fn compare(&self, old: &Self, time: &String) -> PlChanges {
+        let mut changes: PlChanges = PlChanges { 
+            time: time.to_string(), 
+            title: None, 
+            description: None, 
+            channel_title: None, 
+            privacy_status: None
+        };
+
+        if self.title != old.title {
+            changes.title = Some(StringDiff { 
+                old: old.title.clone(), 
+                new: self.title.clone() 
+            });
+        }
+
+        if self.description != old.description {
+            changes.description = Some(StringDiff { 
+                old: old.description.clone(), 
+                new: self.description.clone() 
+            });
+        }
+
+        if self.channel_title != old.channel_title {
+            changes.channel_title = Some(StringDiff { 
+                old: old.channel_title.clone(), 
+                new: self.channel_title.clone() 
+            });
+        }
+
+        if self.privacy_status != old.privacy_status {
+            changes.privacy_status = Some(StringDiff { 
+                old: old.privacy_status.clone(), 
+                new: self.privacy_status.clone() 
+            });
+        }
+
+        // if self.item_count != old.item_count {
+        //     changes.item_count = Some(I64Diff { 
+        //         old: old.item_count.clone(), 
+        //         new: self.item_count.clone() 
+        //     });
+        // }
+
+        changes
+    }
 }
 
 impl SnippetComparable for VSnippet {
