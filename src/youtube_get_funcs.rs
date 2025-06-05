@@ -2,7 +2,51 @@ use std::fs;
 
 use chrono::Local;
 
-use crate::{ryd_struct, youtube_channel::{self}, youtube_video::{self}, youtube_video_improved::{FullStatistics, YtVideo}, yt_channel_improved::{FullStatistics as ChnStats, YtChannel}};
+use crate::{
+    ryd_struct, 
+    youtube_channel::{self}, 
+    youtube_playlist::PlaylistRoot, 
+    youtube_video::{self}, 
+    youtube_video_improved::{FullStatistics, YtVideo}, 
+    yt_channel_improved::{FullStatistics as ChnStats, YtChannel}
+};
+
+pub async fn yt_get_playlist(id: &str) -> Result<(i64, Vec<String>), reqwest::Error> {
+    let api_key_string = get_api_key();
+    let client = reqwest::Client::new();
+    let mut videos = Vec::new();
+    let mut total_results = 0;
+    let mut next_page_token: Option<String> = None;
+
+    loop {
+        let mut request = client.get(
+            "https://www.googleapis.com/youtube/v3/playlistItems")
+            .query(&[("key", &api_key_string)])
+            .query(&[("part", "contentDetails")])
+            .query(&[("playlistId", id)])
+            .query(&[("maxResults", "50")]);
+
+        if let Some(token) = &next_page_token {
+            request = request.query(&[("pageToken", token)]);
+        }
+
+        let response = request.send().await?;
+        let result: PlaylistRoot = response.json().await?;
+
+        if total_results == 0 {
+            total_results = result.page_info.total_results;
+        }
+        
+        videos.extend(result.items.into_iter().map(|item| item.content_details.video_id));
+
+        next_page_token = result.next_page_token;
+        if next_page_token.is_none() {
+            break;
+        }
+    }
+
+    Ok((total_results, videos))
+}
 
 pub async fn youtube_get_channels(ids : Vec<&str>, fields : &str, url: &str) -> Vec<YtChannel> {
     let api_key_string = get_api_key();
@@ -76,7 +120,7 @@ pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Ve
                     Ok(result) => {
                         //println!("result: {:#?}", &result);
                         for item in result.items {
-                            let result = transform_result(item).await;
+                            let result = convert_video(item).await;
                             complete_items.push(result);
                         }
                     },
@@ -96,7 +140,7 @@ pub async fn youtube_get_videos(ids : Vec<&str>, fields : &str, url: &str) -> Ve
     complete_items
 }
 
-async fn transform_result(old_result : youtube_video::Item) -> YtVideo {
+async fn convert_video(old_result : youtube_video::Item) -> YtVideo {
     let time: String = Local::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
     let dislikes = single_ryd(&old_result.id).await;
 

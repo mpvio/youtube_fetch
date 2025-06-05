@@ -4,6 +4,7 @@ use std::env;
 use youtube_get_funcs::{youtube_get_channels, youtube_get_videos};
 
 use crate::write_to_json_funcs::write_better_generic;
+use crate::youtube_get_funcs::yt_get_playlist;
 use crate::yt_traits::{YtItem};
 
 pub mod youtube_video;
@@ -14,6 +15,7 @@ pub mod write_to_json_funcs;
 pub mod youtube_video_improved;
 pub mod yt_channel_improved;
 pub mod yt_traits;
+pub mod youtube_playlist;
 
 #[tokio::main]
 async fn main() {
@@ -50,9 +52,23 @@ fn get_ids_from_user() -> String {
 
 async fn youtube_api_access(input : Vec<String>){
     let str_input : Vec<&str> = input.iter().map(|s| &**s).collect();
-    let (vids, chans) = parse_ids(str_input);
+    let (mut vids, chans, playlists) = parse_ids(str_input);
 
     let mut items: Vec<YtItem> = Vec::new();
+
+    // handle playlist first:
+    let mut vid_strings: Vec<String> = Vec::new();
+    for playlist in playlists {
+        if let Ok((count, pl_vids)) = yt_get_playlist(playlist).await {
+            println!("Playlist Size: {count}.");
+            vid_strings.extend(pl_vids);
+        };
+    }
+
+    // add playlist videos to vec of vids to search
+    let vids_refs: Vec<&str> = vid_strings.iter().map(|s| s.as_str()).collect();
+    vids.extend(vids_refs);
+
 
     for video in youtube_get_videos(
         vids, 
@@ -81,10 +97,10 @@ async fn youtube_api_access(input : Vec<String>){
     }
 }
 
-fn parse_ids(ids: Vec<&str>) -> (Vec<&str>, Vec<&str>){
+fn parse_ids(ids: Vec<&str>) -> (Vec<&str>, Vec<&str>, Vec<&str>){
     let mut videos : Vec<&str> = vec![];
     let mut channels : Vec<&str> = vec![];
-    let mut others : Vec<&str> = vec![];
+    let mut playlists : Vec<&str> = vec![];
 
     for id in ids {
         //println!("currently: {:#?}", &id);
@@ -96,9 +112,9 @@ fn parse_ids(ids: Vec<&str>) -> (Vec<&str>, Vec<&str>){
             channels.push(id);
         } else {
             //println!("other: {:#?}", &id);
-            others.push(id);
+            playlists.push(id);
         }
     }
 
-    (videos, channels)
+    (videos, channels, playlists)
 }

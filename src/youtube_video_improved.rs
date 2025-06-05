@@ -18,7 +18,7 @@ pub struct FullStatistics {
     pub time: String,
     pub view_count: String,
     pub favorite_count: String,
-    pub comment_count: String,
+    pub comment_count: Option<String>,
     pub like_count: String,
     pub dislike_count: String,
 }
