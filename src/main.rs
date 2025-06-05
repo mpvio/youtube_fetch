@@ -59,10 +59,13 @@ async fn youtube_api_access(input : Vec<String>){
     // handle playlist first:
     let mut vid_strings: Vec<String> = Vec::new();
     for playlist in playlists {
-        if let Ok((count, pl_vids)) = yt_get_playlist(playlist).await {
-            println!("Playlist Size: {count}.");
-            vid_strings.extend(pl_vids);
-        };
+        match yt_get_playlist(playlist).await {
+            Ok((count, pl_vids)) => {
+                println!("Playlist Size: {count}.");
+                vid_strings.extend(pl_vids);
+            },
+            Err(e) => println!("{playlist}: {e:#?}"),
+        }
     }
 
     // add playlist videos to vec of vids to search
